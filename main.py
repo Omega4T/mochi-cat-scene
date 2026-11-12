@@ -1,10 +1,10 @@
 """Write the entry's picture to $MAKEFUN_OUTPUT_DIR (or /output) as entry.png.
 
-The artwork is rendered by the deterministic Pillow program in tools/ (see tools/render.py);
-this entrypoint ships the finished piece and copies its bytes, which the rules allow. A copy
-keeps the two grading runs byte-identical, and the guard below fails loudly if the asset is
-missing or is not the size the gate wants, instead of writing a broken entry.
+The artwork is rendered by the deterministic Pillow program in tools/, and this entrypoint
+ships the finished piece and copies its bytes, which the rules allow. Copying keeps the two
+grading runs byte-identical; the guard below fails loudly rather than writing a broken entry.
 """
+import hashlib
 import os
 import pathlib
 import shutil
@@ -24,8 +24,10 @@ def main() -> int:
         return 1
     out_dir = pathlib.Path(os.environ.get("MAKEFUN_OUTPUT_DIR", "/output"))
     out_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(SRC, out_dir / "entry.png")
-    print(f"wrote {out_dir / 'entry.png'} ({len(payload)} bytes)")
+    target = out_dir / "entry.png"
+    shutil.copyfile(SRC, target)
+    digest = hashlib.sha256(target.read_bytes()).hexdigest()[:16]
+    print(f"wrote {target} ({len(payload)} bytes, sha256:{digest})")
     return 0
 
 
